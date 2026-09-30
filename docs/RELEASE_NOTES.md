@@ -1,4 +1,10 @@
-chrono-flow 0.1.0 is an early Android build for device testing.
+chrono-flow 0.1.1 is an update to the 0.1.0 device-testing build.
+
+- Screenshots and screen recording work again. Removing `FLAG_SECURE` from the panel, reply dialogs, and accessibility overlays stops the always-on swipe strip from blanking captures across the whole device. Captures stay in your own system storage and are not uploaded anywhere.
+- Added an emulator regression test that verifies the swipe strip and popup banner do not block system screenshots.
+- This build contains the in-app updater, so install it once manually; later releases can be installed from inside the app.
+
+chrono-flow 0.1.0 features:
 
 - NEW and EARLIER organize live notifications around what you have actually checked.
 - Open the panel from a Quick Settings tile or an optional edge handle.
