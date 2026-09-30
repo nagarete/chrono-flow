@@ -11,7 +11,9 @@ Configure these GitHub Actions secrets in the repository:
 | `CHRONO_KEY_ALIAS` | Signing key alias. |
 | `CHRONO_KEY_PASSWORD` | Signing key password. |
 
-Update `versionCode`, `versionName`, and `docs/RELEASE_NOTES.md`. Push a tag exactly matching `v` plus `versionName`. The workflow checks versions and required secrets, runs tests/lint, builds a signed release, and publishes only to GitHub Releases, with `SHA256SUMS` and `update.json`. The metadata generator reads the built APK’s version with SDK `aapt` and records its download URL, byte size, and SHA-256. Do not edit the APK after metadata generation.
+Update `docs/RELEASE_NOTES.md`, then run `python3 scripts/prepare-release.py patch` (or `minor` / `major`). The helper increments `versionCode`, bumps the numeric `versionName`, commits those values with the release notes, and creates the matching annotated `v*` tag. It requires a clean worktree except for changes to the release notes. Review the created commit and tag, then push the branch and tag using the command it prints. Pushing the tag starts the release workflow.
+
+The workflow checks the tag/version match and required secrets, runs tests/lint, builds a signed release, and publishes only to GitHub Releases, with `SHA256SUMS` and `update.json`. The metadata generator reads the built APK’s version with SDK `aapt` and records its download URL, byte size, and SHA-256. Do not edit the APK after metadata generation.
 
 For local release signing set `CHRONO_KEYSTORE` to an absolute keystore path and the three password/alias variables, then run `./gradlew :app:assembleRelease`. Without a keystore, release builds are intentionally unsigned and must not be presented as installable releases. Debug builds are installable but cannot be upgraded directly to a differently signed release; uninstalling a debug build resets its local attention metadata.
 

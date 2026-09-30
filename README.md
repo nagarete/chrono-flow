@@ -84,7 +84,7 @@ See [device testing](docs/DEVICE_TESTING.md) for Poco X3 NFC and Xiaomi 17T Pro,
 
 ## GitHub distribution
 
-Release APKs are published on [GitHub Releases](https://github.com/nagarete/chrono-flow/releases) only; the latest is `v0.1.0`, marked as a pre-release because the app is still beta. Pull requests and branch pushes run the checks and attach a development APK artifact. For a new signed release, configure the secrets in [release setup](docs/RELEASING.md), bump `versionName`/`versionCode`, and push its matching `v*` tag. The release workflow refuses to publish without signing secrets and attaches an APK, checksums, and updater metadata. It does not publish to any other service.
+Release APKs are published on [GitHub Releases](https://github.com/nagarete/chrono-flow/releases) only; the latest published release is `v0.1.0`, marked as a pre-release because the app is still beta. Pull requests and branch pushes run the checks and attach a development APK artifact. For a new signed release, configure the secrets in [release setup](docs/RELEASING.md), update `docs/RELEASE_NOTES.md`, and run `python3 scripts/prepare-release.py patch` (or `minor` / `major`). The helper commits the version bump and creates the matching tag; pushing that tag runs the release workflow, which attaches a signed APK, checksums, and updater metadata. It does not publish to any other service.
 
 ## Platform references
 
