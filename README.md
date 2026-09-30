@@ -51,12 +51,14 @@ This runs unit tests, Android lint, and the debug build. The installable APK is 
 With an isolated Android emulator running:
 
 ```sh
-./gradlew :app:connectedDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.chronoflow.PanelIntegrationTest
 ```
 
 Instrumentation tests grant notification access on the **test emulator** using Android's shell API, exercise real notification listener arrival/dismissal, check attention transitions, and test native expansion/`RemoteInput` with synthetic fixtures. Use an isolated emulator; do not run these tests on your everyday phone. Instrumentation screenshots temporarily clear `FLAG_SECURE` in test code only; the production app has no screenshot bypass or demo notifications.
 
 The current device suite is validated on API 35. It temporarily sets/removes a PIN on the disposable emulator for its final lock-screen test. Executed checks and screenshots are in [validation](docs/VALIDATION.md).
+
+For an owner-authorized, already-unlocked physical phone with notification access already granted, use the separate `dev.chronoflow.PhysicalDeviceTest` class. It never changes credentials, access grants, or privacy settings; it posts/dismisses only uniquely tagged test notifications and preserves existing attention markers for unchanged notification versions. It tests tile launch, live attention/expansion/open/dismiss behavior, and a synthetic native reply with no external recipient. See [physical-device test commands](docs/DEVICE_TESTING.md#automated-phone-checks). The emulator suite refuses to run on physical hardware.
 
 See [device testing](docs/DEVICE_TESTING.md) for Poco X3 NFC and Xiaomi 17T Pro, and [architecture](docs/ARCHITECTURE.md) for the implementation.
 

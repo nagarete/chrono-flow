@@ -38,6 +38,8 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
 
     @Override protected void setUp() throws Exception {
         super.setUp(); context = getInstrumentation().getTargetContext();
+        assertTrue("Emulator-only suite: select PhysicalDeviceTest on a phone",
+                Build.HARDWARE.contains("ranchu") || Build.HARDWARE.contains("goldfish"));
         shell("input keyevent KEYCODE_WAKEUP"); shell("wm dismiss-keyguard");
         waitFor(() -> !Preferences.locked(context));
         shell("cmd notification allow_listener dev.chronoflow/dev.chronoflow.ChronoListener");
