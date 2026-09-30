@@ -26,7 +26,7 @@ public final class SetupActivity extends Activity implements NotificationReposit
         content = Ui.column(this);
         scroll.addView(content);
         setContentView(scroll);
-        Ui.secureWindow(this, scroll, 24, 18, 24);
+        Ui.insetWindow(this, scroll, 24, 18, 24);
     }
     @Override protected void onResume() {
         super.onResume();

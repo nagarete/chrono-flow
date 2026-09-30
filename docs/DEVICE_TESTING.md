@@ -29,7 +29,7 @@ Use Android 10+ and install the development APK through ADB or GitHub. Test defa
 | System lock notifications disabled | No notification app names, counts, titles, bodies, or actions reveal the active set. |
 | Open/dismiss/action from locked panel | Android authentication precedes dispatch. Canceling authentication performs no action. |
 | Press power while viewing or replying | Panel closes and content/reply UI vanishes before locked use. Previously qualified unlocked observations may be committed. |
-| Private app previews / screen recording | Content is blocked by FLAG_SECURE; no private text leaks. |
+| Private app previews / screen recording | Allowed: chrono-flow sets no FLAG_SECURE, so screenshots and recordings succeed and stay in the user's own system storage. |
 | Reboot / listener process death | System rebind restores live set and hashed seen state. Removed notifications are pruned. Check firmware-specific survival. |
 | Android 15+ sensitive/OTP posts | OS-redacted contents stay redacted; chrono-flow makes no bypass attempt. |
 | Calls, alarms, progress, grouped apps | System behavior is preserved; ongoing updates do not repeatedly resurface; child notifications appear without duplicate summaries. |

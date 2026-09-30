@@ -19,7 +19,6 @@ import android.service.notification.StatusBarNotification;
 import android.test.InstrumentationTestCase;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 import java.io.File;
@@ -251,14 +250,11 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
         return null;
     }
     private void capture(String name) throws Exception {
-        // Screenshot permission exists only in this separately installed instrumentation APK.
-        main(() -> activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE));
-        Thread.sleep(300);
+        getInstrumentation().waitForIdleSync();
         Bitmap image = getInstrumentation().getUiAutomation().takeScreenshot();
         assertNotNull(image);
         File directory = new File(context.getExternalFilesDir(null), "test-screenshots"); directory.mkdirs();
         try (FileOutputStream output = new FileOutputStream(new File(directory, name))) { image.compress(Bitmap.CompressFormat.PNG, 100, output); }
         image.recycle();
-        main(() -> activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE));
     }
 }

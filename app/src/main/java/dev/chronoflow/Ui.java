@@ -11,7 +11,6 @@ import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
-import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -73,8 +72,7 @@ final class Ui {
         view.setPadding(dp(view.getContext(), horizontal), dp(view.getContext(), vertical),
                 dp(view.getContext(), horizontal), dp(view.getContext(), vertical));
     }
-    static void secureWindow(Activity activity, View root, int horizontal, int top, int bottom) {
-        activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+    static void insetWindow(Activity activity, View root, int horizontal, int top, int bottom) {
         if (Build.VERSION.SDK_INT >= 30) {
             activity.getWindow().setDecorFitsSystemWindows(false);
         } else {

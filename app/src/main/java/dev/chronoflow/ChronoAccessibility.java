@@ -83,7 +83,7 @@ public final class ChronoAccessibility extends AccessibilityService implements N
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(width, height,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_SECURE,
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP | Gravity.LEFT;
         params.setTitle(title);

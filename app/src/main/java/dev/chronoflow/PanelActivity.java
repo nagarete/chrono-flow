@@ -23,7 +23,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
@@ -112,7 +111,7 @@ public final class PanelActivity extends Activity implements NotificationReposit
         bottom.addView(footer, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         bottom.addView(Ui.button(this, "Done", true, view -> finish())); root.addView(bottom);
         setContentView(root);
-        Ui.secureWindow(this, root, 20, 14, 16);
+        Ui.insetWindow(this, root, 20, 14, 16);
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF); filter.addAction(Intent.ACTION_USER_PRESENT);
         filter.addAction(Intent.ACTION_TIME_TICK); filter.addAction(Intent.ACTION_TIME_CHANGED); filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
@@ -452,14 +451,13 @@ public final class PanelActivity extends Activity implements NotificationReposit
                 edit.setFocusable(false); edit.setOnClickListener(view -> {
                     AlertDialog choice = new AlertDialog.Builder(this).setTitle(input.getLabel()).setItems(options,
                             (d, which) -> edit.setText(options[which])).create();
-                    choice.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); choice.show();
+                    choice.show();
                 });
             }
             fields.put(input.getResultKey(), edit); form.addView(edit);
         }
         dialog = new AlertDialog.Builder(this).setTitle(action.title).setView(form)
                 .setNegativeButton("Cancel", null).setPositiveButton("Send", null).create();
-        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
             if (Preferences.locked(this)) { dialog.dismiss(); render(); return; }
             NotificationEntry current = live(entry); if (current == null) { dialog.dismiss(); return; }

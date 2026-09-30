@@ -1,5 +1,12 @@
 # Validation — 2026-09-30
 
+## Screenshot permission and build
+
+- `FLAG_SECURE` removed from the panel, reply dialogs, and accessibility overlays. A visible `FLAG_SECURE` window blocks screenshots of the whole display, so the always-on swipe strip previously broke screenshots in every app. Screenshots and recordings now work everywhere; captures stay in the user's own system storage.
+- Current debug build, Android lint and all **14 existing unit tests** pass via `scripts/check.sh`. The debug and instrumentation APKs assemble.
+- **5 override emulator tests** pass in 15.267 seconds, including the new `testOverlaysDoNotBlockScreenshots`, which asserts the swipe strip and the popup banner no longer blank `UiAutomation.takeScreenshot()`. [Runner output](validation/override-screenshots-tests.txt).
+- All **5 panel emulator tests** pass on this build in 8.714 seconds, capturing the panel and setup without any `FLAG_SECURE` bypass.
+
 ## Optional swipe and banner controls
 
 - Current debug build, Android lint and all **14 existing unit tests** pass via `scripts/check.sh`.
@@ -34,7 +41,7 @@ An isolated API 35 Google APIs x86_64 emulator, 1080×2400 at 420 dpi, ran **5 i
 4. Actual Quick Settings tile launch from the home screen.
 5. A PIN-secured locked panel: private titles/bodies absent, secret notifications omitted, and a lock-screen glance leaves notifications NEW. The emulator's temporary PIN was removed by test cleanup.
 
-Screenshots use instrumentation fixtures, not real personal notifications. `FLAG_SECURE` is temporarily cleared by the separately installed test APK for capture; the production app exposes no such switch.
+Screenshots use instrumentation fixtures, not real personal notifications. The app sets no `FLAG_SECURE`, so the instrumentation APK captures directly with no bypass.
 
 | Panel | Locked view | Setup |
 | --- | --- | --- |

@@ -107,6 +107,18 @@ public final class OverrideIntegrationTest extends InstrumentationTestCase {
         await(() -> serviceView("swipe") == null);
     }
 
+    public void testOverlaysDoNotBlockScreenshots() throws Exception {
+        await(() -> serviceView("swipe") != null && serviceView("banner") == null);
+        UiAutomation automation = getInstrumentation()
+                .getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES);
+        Thread.sleep(300);
+        assertNotNull("The swipe strip must not blank system screenshots", automation.takeScreenshot());
+        fixture(newTag(), "post", false, "");
+        await(() -> serviceView("banner") != null);
+        Thread.sleep(300);
+        assertNotNull("The popup banner must not blank system screenshots", automation.takeScreenshot());
+    }
+
     public void testBannerUpdateHideAndRemoval() throws Exception {
         String tag = newTag();
         fixture(tag, "post", false, "");
