@@ -93,6 +93,12 @@ public final class SetupActivity extends Activity implements NotificationReposit
         Ui.space(content, 20);
         toggle("Public content while locked", "Off by default. Only notifications explicitly marked public may show their text. Private content stays hidden; actions require unlock.",
                 "public_on_lock", value -> {});
+        Ui.space(content, 20);
+        toggle("Automatic update checks", "Check GitHub when you open the app, at most once a day. Updates download only when you choose; Android asks before installing. No notification content is sent.",
+                "automatic_updates", value -> {});
+        Ui.space(content, 12);
+        box("APP UPDATES", "Check for a newer signed release of chrono-flow. Your settings stay in place when updating.",
+                "Check for updates", view -> ChronoApp.updater(this).check(this, true));
         Ui.space(content, 28);
         TextView open = Ui.button(this, "Open notification panel  →", true,
                 view -> startActivity(new Intent(this, PanelActivity.class)));
@@ -102,7 +108,12 @@ public final class SetupActivity extends Activity implements NotificationReposit
         Ui.space(content, 8);
         content.addView(Ui.text(this, "If access stops, check notification access, Accessibility and your firmware’s background or autostart controls. Android may ask you to allow restricted settings for a GitHub-installed APK.\n\nThe optional top-left swipe opens chrono-flow in place of the stock shade. The right side and lock screen stay with Android. Stock popup suppression is configured in Android’s notification settings.", 13, Ui.MUTED));
         Ui.space(content, 26);
-        content.addView(Ui.text(this, "LOCAL ONLY  ·  NO ACCOUNTS  ·  NO TRACKING\nchrono-flow 0.1.0", 10, Ui.MUTED));
+        content.addView(Ui.text(this, "NOTIFICATIONS STAY LOCAL  ·  NO ACCOUNTS  ·  NO TRACKING\nchrono-flow " + appVersion(), 10, Ui.MUTED));
+    }
+
+    private String appVersion() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+        catch (android.content.pm.PackageManager.NameNotFoundException e) { return ""; }
     }
 
     private void box(String title, String description, String label, View.OnClickListener action) {
@@ -122,7 +133,7 @@ public final class SetupActivity extends Activity implements NotificationReposit
         Switch control = new Switch(this);
         control.setText(label); control.setTextSize(16); control.setTextColor(Ui.TEXT);
         control.setMinHeight(Ui.dp(this, 48));
-        control.setChecked(Preferences.get(this).getBoolean(key, false));
+        control.setChecked(Preferences.get(this).getBoolean(key, "automatic_updates".equals(key)));
         control.setOnCheckedChangeListener((button, checked) -> {
             Preferences.get(this).edit().putBoolean(key, checked).apply(); change.changed(checked);
         });

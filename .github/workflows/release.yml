@@ -48,9 +48,10 @@ jobs:
           ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/chrono-flow-${GITHUB_REF_NAME}.apk"
+          python3 scripts/release-metadata.py "$GITHUB_REF_NAME" dist
           cd dist
           sha256sum *.apk > SHA256SUMS
       - name: Publish on GitHub only
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.apk dist/SHA256SUMS --verify-tag --title "chrono-flow $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
+        run: gh release create "$GITHUB_REF_NAME" dist/*.apk dist/SHA256SUMS dist/update.json --verify-tag --title "chrono-flow $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md

@@ -11,8 +11,14 @@ Configure these GitHub Actions secrets in the repository:
 | `CHRONO_KEY_ALIAS` | Signing key alias. |
 | `CHRONO_KEY_PASSWORD` | Signing key password. |
 
-Update `versionCode`, `versionName`, and `docs/RELEASE_NOTES.md`. Push a tag exactly matching `v` plus `versionName`. The workflow checks versions and required secrets, runs tests/lint, builds a signed release, and publishes only to GitHub Releases, with `SHA256SUMS`.
+Update `versionCode`, `versionName`, and `docs/RELEASE_NOTES.md`. Push a tag exactly matching `v` plus `versionName`. The workflow checks versions and required secrets, runs tests/lint, builds a signed release, and publishes only to GitHub Releases, with `SHA256SUMS` and `update.json`. The metadata generator reads the built APK’s version with SDK `aapt` and records its download URL, byte size, and SHA-256. Do not edit the APK after metadata generation.
 
 For local release signing set `CHRONO_KEYSTORE` to an absolute keystore path and the three password/alias variables, then run `./gradlew :app:assembleRelease`. Without a keystore, release builds are intentionally unsigned and must not be presented as installable releases. Debug builds are installable but cannot be upgraded directly to a differently signed release; uninstalling a debug build resets its local attention metadata.
 
 The repository `nagarete/chrono-flow` is configured with these secrets and has published `v0.1.0` as a pre-release. The release signing key and its passwords are held outside the repository (locally in ignored `.tools/`); back them up, because every future APK update must use the same certificate. Any later owner setup beyond rotating that key or secret is not already completed.
+
+## In-app updates
+
+The updater reads `https://github.com/nagarete/chrono-flow/releases/latest/download/update.json`. Publish updater-compatible releases as normal releases: GitHub’s latest endpoint excludes pre-releases. Keep the existing signing key and increase `versionCode` for every update. The app rejects APKs signed with a different current certificate; signing-key rotation is not supported by this updater. Never replace an APK asset without regenerating its metadata.
+
+The existing v0.1.0 APK has no updater, so its users must manually install the first release containing this feature. Subsequent releases can be downloaded and installed from inside the app, with Android confirmation. This change does not publish a release or change repository secrets.
