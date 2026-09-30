@@ -1,0 +1,19 @@
+<resources>
+    <style name="Theme.Chrono" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">#101217</item>
+        <item name="android:navigationBarColor">#101217</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#C5B7F5</item>
+        <item name="android:windowBackground">#101217</item>
+    </style>
+    <style name="Theme.Chrono.Panel" parent="Theme.Chrono">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.7</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+</resources>

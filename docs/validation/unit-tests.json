@@ -1,0 +1,14 @@
+[
+  {
+    "name": "dev.chronoflow.core.AttentionLedgerTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "dev.chronoflow.core.LockPolicyTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0"
+  }
+]

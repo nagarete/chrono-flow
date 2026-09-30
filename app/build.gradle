@@ -1,0 +1,60 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'dev.chronoflow'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'dev.chronoflow'
+        minSdk 29
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+        testInstrumentationRunner 'android.test.InstrumentationTestRunner'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    signingConfigs { debug { storeFile rootProject.file('.tools/debug.keystore') } }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Release signing is supplied locally or by GitHub Actions; never commit a key.
+            if (System.getenv('CHRONO_KEYSTORE')) {
+                signingConfig signingConfigs.create('githubRelease') {
+                    storeFile file(System.getenv('CHRONO_KEYSTORE'))
+                    storePassword System.getenv('CHRONO_STORE_PASSWORD')
+                    keyAlias System.getenv('CHRONO_KEY_ALIAS')
+                    keyPassword System.getenv('CHRONO_KEY_PASSWORD')
+                }
+            }
+        }
+    }
+    lint { abortOnError true; checkReleaseBuilds true }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    // Platform test libraries are available only to the separately installed instrumentation APK.
+    androidTestCompileOnly files(
+            "${android.sdkDirectory}/platforms/android-35/optional/android.test.runner.jar",
+            "${android.sdkDirectory}/platforms/android-35/optional/android.test.base.jar")
+    androidTestImplementation 'junit:junit:4.13.2'
+}
+
+// Keep development signing material inside the repository's ignored tool directory.
+def debugKey = rootProject.file('.tools/debug.keystore')
+def createDebugKey = tasks.register('createLocalDebugKey', Exec) {
+    outputs.file(debugKey)
+    onlyIf { !debugKey.exists() }
+    doFirst { debugKey.parentFile.mkdirs() }
+    commandLine "${System.getProperty('java.home')}/bin/keytool", '-genkeypair', '-keystore', debugKey,
+            '-storepass', 'android', '-keypass', 'android', '-alias', 'androiddebugkey',
+            '-keyalg', 'RSA', '-keysize', '2048', '-validity', '10000',
+            '-dname', 'CN=Android Debug,O=Android,C=US'
+}
+tasks.configureEach {
+    if (name.startsWith('validateSigning') && name.contains('Debug')) dependsOn(createDebugKey)
+}

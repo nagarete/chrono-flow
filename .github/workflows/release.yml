@@ -1,0 +1,54 @@
+name: Signed GitHub release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check version and signing configuration
+        env:
+          SIGNING_KEY: ${{ secrets.CHRONO_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.CHRONO_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CHRONO_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CHRONO_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r"versionName '([^']+)'", Path('app/build.gradle').read_text()).group(1)
+          if os.environ['GITHUB_REF_NAME'] != 'v' + version:
+              raise SystemExit('Tag must match app versionName: v' + version)
+          for name in ('SIGNING_KEY', 'STORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'):
+              if not os.environ.get(name):
+                  raise SystemExit('Missing release signing secret: ' + name)
+          PY
+      - name: Build signed APK
+        env:
+          SIGNING_KEY: ${{ secrets.CHRONO_KEYSTORE_BASE64 }}
+          CHRONO_KEYSTORE: ${{ github.workspace }}/.tools/release.keystore
+          CHRONO_STORE_PASSWORD: ${{ secrets.CHRONO_STORE_PASSWORD }}
+          CHRONO_KEY_ALIAS: ${{ secrets.CHRONO_KEY_ALIAS }}
+          CHRONO_KEY_PASSWORD: ${{ secrets.CHRONO_KEY_PASSWORD }}
+        run: |
+          mkdir -p .tools
+          printf '%s' "$SIGNING_KEY" | base64 --decode > "$CHRONO_KEYSTORE"
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/chrono-flow-${GITHUB_REF_NAME}.apk"
+          cd dist
+          sha256sum *.apk > SHA256SUMS
+      - name: Publish on GitHub only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.apk dist/SHA256SUMS --verify-tag --title "chrono-flow $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md

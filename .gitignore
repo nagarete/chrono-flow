@@ -1,0 +1,10 @@
+.gradle/
+.gradle-home/
+.android-home/
+.tools/
+local.properties
+**/build/
+*.jks
+*.keystore
+captures/
+

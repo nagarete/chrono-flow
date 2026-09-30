@@ -1,0 +1,54 @@
+package dev.chronoflow;
+
+import android.content.ComponentName;
+import android.service.notification.NotificationListenerService;
+import android.service.notification.StatusBarNotification;
+
+public final class ChronoListener extends NotificationListenerService {
+    private static ChronoListener current;
+    private EdgeHandle edge;
+
+    @Override public void onCreate() {
+        super.onCreate();
+        edge = new EdgeHandle(this);
+    }
+    @Override public void onListenerConnected() {
+        current = this;
+        ChronoApp.repository(this).connect(getActiveNotifications(), getCurrentRanking());
+        edge.start();
+    }
+    @Override public void onNotificationPosted(StatusBarNotification sbn, RankingMap rankingMap) {
+        if (sbn != null) ChronoApp.repository(this).post(sbn, rankingMap);
+    }
+    @Override public void onNotificationRemoved(StatusBarNotification sbn) {
+        if (sbn != null) ChronoApp.repository(this).remove(sbn);
+    }
+    @Override public void onNotificationRankingUpdate(RankingMap rankingMap) {
+        ChronoApp.repository(this).rankings(rankingMap);
+    }
+    @Override public void onListenerDisconnected() {
+        current = null;
+        edge.stop();
+        ChronoApp.repository(this).disconnect();
+        // One platform-managed rebind request, no retry timer or keep-alive service.
+        requestRebind(new ComponentName(this, ChronoListener.class));
+    }
+    @Override public void onDestroy() {
+        if (current == this) current = null;
+        edge.stop();
+        ChronoApp.repository(this).disconnect();
+        super.onDestroy();
+    }
+    static boolean dismiss(String systemKey) {
+        if (current == null) return false;
+        try { current.cancelNotification(systemKey); return true; }
+        catch (SecurityException | IllegalStateException e) { return false; }
+    }
+    static void shown(String[] systemKeys) {
+        if (current != null && systemKeys.length > 0) {
+            try { current.setNotificationsShown(systemKeys); }
+            catch (SecurityException | IllegalStateException ignored) { }
+        }
+    }
+    static void refreshEdge() { if (current != null) current.edge.refresh(); }
+}
