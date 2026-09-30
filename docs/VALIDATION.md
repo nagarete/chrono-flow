@@ -1,5 +1,17 @@
 # Validation — 2026-09-30
 
+## Optional swipe and banner controls
+
+- Current debug build, Android lint and all **14 existing unit tests** pass via `scripts/check.sh`.
+- **4 new API 35 emulator instrumentation tests** pass in 18.987 seconds. [Runner output](validation/override-tests.txt). They cover actual top-left gesture interception and native right-side shade access, popup arrival/update/deduplication/hiding/opening/removal, expiry, lock/screen-off privacy, DND, low-importance and critical-notification exclusions, feature disable and listener-access revocation.
+- All **5 existing panel emulator tests** also pass on this build in 12.606 seconds. [Regression output](validation/override-panel-tests.txt). Current debug APK: [SHA-256](validation/override-debug-apk.sha256).
+- The first gesture test exposed cancellation by SystemUI before the original drag threshold. Lowering the threshold to 12 dp fixed the real injected top-edge swipe; no screen-content retrieval or gesture injection was added.
+- New controls are opt-in and disabled by default. Accessibility is system-bound and protected by `BIND_ACCESSIBILITY_SERVICE`; screen-content retrieval and gesture injection are disabled. No new use-permission, runtime dependency, DND manipulation or notification cancellation is introduced for stock popup suppression.
+- Stock floating-notification suppression is a separate user-selected Android/OEM setting. The app explains and links to it; enabling Accessibility alone does not guarantee popup replacement.
+- This change has not been installed or validated on a physical phone. MIUI gesture interception, cutouts/rotation, stock floating-notification settings, Android 10/11 behavior and battery impact remain unverified.
+
+The remaining sections record baseline validation before these optional controls. Baseline physical APK hashes and release checks do not describe the new debug artifact.
+
 ## Executed checks
 
 - JDK 17, Gradle 8.13, Android Gradle Plugin 8.13.2, Android SDK/build-tools 35.
@@ -30,7 +42,7 @@ Screenshots use instrumentation fixtures, not real personal notifications. `FLAG
 
 ## Physical Poco
 
-The owner connected and authorized checks on Xiaomi M2007J20CG (`surya`, Poco X3 NFC): Android 12/API 31, MIUI 14 `V14.0.2.0.SJGIDXM`, security patch 2023-06-01, 1080×2400 at 440 dpi. The installed **156,496-byte** debug APK matches the current local artifact byte-for-byte. [SHA-256](validation/debug-apk.sha256). Notification access was already granted.
+The owner connected and authorized baseline checks on Xiaomi M2007J20CG (`surya`, Poco X3 NFC): Android 12/API 31, MIUI 14 `V14.0.2.0.SJGIDXM`, security patch 2023-06-01, 1080×2400 at 440 dpi. The installed **156,496-byte** debug APK matched the baseline artifact byte-for-byte. [SHA-256](validation/debug-apk.sha256). Notification access was already granted.
 
 The final selected `PhysicalDeviceTest` run passed **3 tests**, with zero failures/errors, in 15.816 seconds. [Runner output](validation/poco-tests.txt).
 
@@ -56,4 +68,4 @@ The phone helper publishes genuine notifications from its own separately install
 - Authentication success/cancellation across OEM keyguards, choice-only/data-only action behavior across real apps, large-font/TalkBack/landscape use, and reboot behavior.
 - Stable release key provisioning and a real GitHub Actions release run.
 
-The app is an early device-testing implementation. It provides a companion panel over the lock screen; replacing the privileged stock notification shade/native lock-screen list is outside an ordinary APK's capabilities.
+The app is an early device-testing implementation. Its optional top-left gesture opens chrono-flow while unlocked. It provides a companion panel over the lock screen; replacing privileged SystemUI or the native lock-screen list remains outside an ordinary APK's capabilities.

@@ -1,0 +1,8 @@
+
+dev.chronoflow.PanelIntegrationTest:.....
+Test results for InstrumentationTestRunner=.....
+Time: 12.606
+
+OK (5 tests)
+
+

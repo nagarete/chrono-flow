@@ -63,6 +63,25 @@ public final class SetupActivity extends Activity implements NotificationReposit
         TextView options = Ui.text(this, "YOUR EXPERIENCE", 11, Ui.MUTED);
         options.setLetterSpacing(0.12f); content.addView(options);
         Ui.space(content, 16);
+        box("SWIPE AND POPUP ACCESS", ChronoAccessibility.connected()
+                        ? "Accessibility connected. Choose the shortcuts below."
+                        : "Enable chrono-flow swipe and banners in Android Accessibility. It adds touch controls without reading your screen. Notification access is also required.",
+                "Open Accessibility settings", view -> settings(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        Ui.space(content, 20);
+        toggle("Top-left swipe", "Swipe down from the left half of the top edge to open chrono-flow while unlocked. Use the right half for Android’s shade and Quick Settings. Requires Accessibility above.",
+                "top_swipe", value -> {
+                    if (value && !ChronoAccessibility.connected()) settings(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                });
+        Ui.space(content, 20);
+        toggle("Popup banners", "Show new or changed notifications for six seconds while unlocked. Tap Open panel to review them. Quiet notifications, Do Not Disturb, calls and alarms keep their Android behavior. Requires Accessibility above.",
+                "banners", value -> {
+                    if (value && !ChronoAccessibility.connected()) settings(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                });
+        Ui.space(content, 12);
+        box("AVOID DOUBLE POPUPS", "In Android’s notification settings, turn off Floating notifications (or Pop on screen) for the apps you want chrono-flow to handle. Keep their notifications enabled. Android controls these settings; Accessibility cannot switch them off for other apps.",
+                "Open notification settings", view -> settings(Build.VERSION.SDK_INT >= 33
+                        ? Settings.ACTION_ALL_APPS_NOTIFICATION_SETTINGS : Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS));
+        Ui.space(content, 20);
         toggle("Edge handle", "Swipe inward or tap the small handle at the right edge. Optional; hidden while locked.",
                 "edge", value -> {
                     if (value && !Settings.canDrawOverlays(this)) {
@@ -81,7 +100,7 @@ public final class SetupActivity extends Activity implements NotificationReposit
         Ui.space(content, 24);
         content.addView(Ui.text(this, "ON XIAOMI / POCO", 11, Ui.ACCENT));
         Ui.space(content, 8);
-        content.addView(Ui.text(this, "If access stops, check notification access and your firmware’s background or autostart controls. Android may ask you to allow restricted settings for a GitHub-installed APK.\n\nchrono-flow is a companion panel. Your system shade and lock screen remain controlled by Android.", 13, Ui.MUTED));
+        content.addView(Ui.text(this, "If access stops, check notification access, Accessibility and your firmware’s background or autostart controls. Android may ask you to allow restricted settings for a GitHub-installed APK.\n\nThe optional top-left swipe opens chrono-flow in place of the stock shade. The right side and lock screen stay with Android. Stock popup suppression is configured in Android’s notification settings.", 13, Ui.MUTED));
         Ui.space(content, 26);
         content.addView(Ui.text(this, "LOCAL ONLY  ·  NO ACCOUNTS  ·  NO TRACKING\nchrono-flow 0.1.0", 10, Ui.MUTED));
     }

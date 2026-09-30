@@ -18,13 +18,21 @@ public final class ChronoListener extends NotificationListenerService {
         edge.start();
     }
     @Override public void onNotificationPosted(StatusBarNotification sbn, RankingMap rankingMap) {
-        if (sbn != null) ChronoApp.repository(this).post(sbn, rankingMap);
+        if (sbn != null) {
+            NotificationRepository repository = ChronoApp.repository(this);
+            String key = NotificationRepository.hash(sbn.getKey());
+            NotificationEntry previous = repository.find(key);
+            long revision = previous == null ? 0 : previous.attention.revision;
+            repository.post(sbn, rankingMap);
+            ChronoAccessibility.posted(repository.find(key), revision, rankingMap);
+        }
     }
     @Override public void onNotificationRemoved(StatusBarNotification sbn) {
         if (sbn != null) ChronoApp.repository(this).remove(sbn);
     }
     @Override public void onNotificationRankingUpdate(RankingMap rankingMap) {
         ChronoApp.repository(this).rankings(rankingMap);
+        ChronoAccessibility.rankingsChanged(rankingMap);
     }
     @Override public void onListenerDisconnected() {
         current = null;

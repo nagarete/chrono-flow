@@ -17,15 +17,21 @@ public final class FixturePublisher extends BroadcastReceiver {
             manager.cancel(tag, 912);
             return;
         }
-        NotificationChannel channel = new NotificationChannel("physical-fixtures", "chrono-flow test fixtures",
-                NotificationManager.IMPORTANCE_DEFAULT);
+        String mode = intent.getStringExtra("mode");
+        boolean quiet = "quiet".equals(mode);
+        NotificationChannel channel = new NotificationChannel(quiet ? "quiet-fixtures" : "physical-fixtures", "chrono-flow test fixtures",
+                quiet ? NotificationManager.IMPORTANCE_LOW : NotificationManager.IMPORTANCE_DEFAULT);
         channel.setSound(null, null);
         manager.createNotificationChannel(channel);
         String text = intent.getBooleanExtra("updated", false) ? "Updated-test-message" : "First-test-message";
-        manager.notify(tag, 912, new Notification.Builder(context, channel.getId())
+        Notification.Builder builder = new Notification.Builder(context, channel.getId())
                 .setSmallIcon(android.R.drawable.stat_notify_chat)
                 .setContentTitle("Chrono-Poco-test").setContentText(text)
                 .setStyle(new Notification.BigTextStyle().bigText(text))
-                .setVisibility(Notification.VISIBILITY_PRIVATE).build());
+                .setVisibility(Notification.VISIBILITY_PRIVATE);
+        if ("call".equals(mode)) builder.setCategory(Notification.CATEGORY_CALL);
+        if ("alarm".equals(mode)) builder.setCategory(Notification.CATEGORY_ALARM);
+        if ("ongoing".equals(mode)) builder.setOngoing(true);
+        manager.notify(tag, 912, builder.build());
     }
 }

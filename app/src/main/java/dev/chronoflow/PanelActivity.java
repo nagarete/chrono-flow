@@ -44,7 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** The daily surface, launched from the tile or edge. Never unlocks or opens itself automatically. */
+/** The daily surface, launched by the user from the tile, edge, swipe or banner. */
 public final class PanelActivity extends Activity implements NotificationRepository.Observer {
     private NotificationRepository repository;
     private ListView list;
@@ -127,11 +127,13 @@ public final class PanelActivity extends Activity implements NotificationReposit
     }
     @Override protected void onResume() {
         super.onResume();
+        ChronoAccessibility.panelVisible(true);
         ChronoListener.refreshActive();
         resumed = true; repository.observe(this); render();
     }
     @Override protected void onPause() {
         resumed = false;
+        ChronoAccessibility.panelVisible(false);
         handler.removeCallbacksAndMessages(null);
         repository.unobserve(this);
         // A lock-screen glance is not a meaningful check.

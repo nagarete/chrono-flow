@@ -1,6 +1,6 @@
 # Device acceptance testing
 
-Physical devices intended for testing: **Poco X3 NFC** and **Xiaomi 17T Pro**. The Poco has now been tested: Xiaomi M2007J20CG (`surya`), Android 12/API 31, MIUI 14 (`V14.0.2.0.SJGIDXM`), security patch 2023-06-01, display 1080×2400 at 440 dpi. The owner enabled autostart after MIUI blocked a listener restart. The final phone suite passed all three checks, and its installed APK matches the current validated debug build. Xiaomi 17T Pro has not been connected. Record firmware, region, and security patch versions; model names alone do not establish behavior.
+Physical devices intended for testing: **Poco X3 NFC** and **Xiaomi 17T Pro**. The Poco baseline was tested: Xiaomi M2007J20CG (`surya`), Android 12/API 31, MIUI 14 (`V14.0.2.0.SJGIDXM`), security patch 2023-06-01, display 1080×2400 at 440 dpi. The owner enabled autostart after MIUI blocked a listener restart. The phone suite passed all three checks, and its installed APK matched the baseline debug build tested then. The new swipe/banner build has not been installed or tested on that phone. Xiaomi 17T Pro has not been connected. Record firmware, region, and security patch versions; model names alone do not establish behavior.
 
 Use Android 10+ and install the development APK through ADB or GitHub. Test default settings first, without blanket battery exemptions. If Android blocks notification access on a sideloaded APK, check App info for Allow restricted settings. Only enable firmware-specific autostart/background controls if testing demonstrates the listener is being stopped.
 
@@ -10,6 +10,9 @@ Use Android 10+ and install the development APK through ADB or GitHub. Test defa
 | Notification access granted | Current Android notifications appear, in newest-first order. |
 | Tile from another app/home | Panel opens without navigating through setup. |
 | Optional edge handle | Tap/inward swipe opens panel; disabling preference removes it. Verify touch target does not prevent system back gestures. |
+| Optional top-left swipe | Enable the Accessibility service and preference. Left-half top swipe opens chrono-flow while unlocked; the right half still opens stock shade/Quick Settings. Disable removes the touch strip. Check cutouts, landscape and MIUI gesture behavior. |
+| Optional popup banners | Enable Accessibility and banners, then disable stock floating notifications for selected apps in Android settings. New/changed notifications show a six-second popup; identical reposts do not restart it. Hide/expiry retain the original notification and leave attention unchecked. |
+| Popup privacy and interruption controls | No banners while locked, screen-off, panel-open, disconnected, disabled or under DND. Low-importance/ongoing/call/alarm/full-screen notifications retain Android behavior. Remove/change/rank a visible notification and verify stale popup disappears. |
 | Brief open under 1.2 seconds | Cards remain NEW. |
 | Unlocked card visible over 1.2 seconds, then close | That exact version becomes EARLIER. Off-screen cards stay NEW. |
 | Incoming message while checking its previous version | New version stays NEW. |
@@ -53,6 +56,15 @@ Instrumentation restarts the target process. The helper opens setup and requests
 On the tested MIUI build, `cmd notification post --content-intent` rejects shell-created pending intents with a package-identity permission error. Background arrival callbacks were also intermittently missed despite the notification being retrievable through the connected listener. The production panel now reconciles Android's live set on each resume, with no background polling. Phone lifecycle checks use genuine helper-app notifications and exercise this foreground behavior. Opening/replies use an in-memory fixture whose pending intents are created by their owning app; this checks chrono-flow's dispatch path, without establishing compatibility with every third-party app or proving delivery of every background callback.
 
 Never run an unqualified instrumentation suite on an everyday phone: select the class explicitly. `PanelIntegrationTest` is emulator-only and checks hardware before any access/security mutation.
+
+The optional-control suite is also emulator-only. Run it on the repository's disposable emulator with the matching main and helper APKs installed and notification permission granted to the helper:
+
+```sh
+adb -s <emulator-serial> shell pm grant dev.chronoflow.test android.permission.POST_NOTIFICATIONS
+adb -s <emulator-serial> shell am instrument -w -e class dev.chronoflow.OverrideIntegrationTest dev.chronoflow.test/android.test.InstrumentationTestRunner
+```
+
+`OverrideIntegrationTest` temporarily enables this app's Accessibility service and notification access, changes DND, toggles the new preferences and turns the emulator screen off/on. It preserves other Accessibility services and restores the saved settings and preferences after each test. It never sets a PIN. Its fixtures use the helper's isolated notification namespace. This suite refuses physical hardware before altering settings. Existing phone results predate the swipe/banner implementation; manually granting and testing the new controls on a physical phone requires owner authorization.
 
 ## Development validation
 

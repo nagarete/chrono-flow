@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_description">Optional top-left swipe and notification banners. Swipe down from the left half of the top edge to open chrono-flow; the right half stays available for Android Quick Settings. Banners appear only while unlocked. This service does not read screen content or perform gestures. Notification text comes from your separate notification-access grant. Turn off stock floating notifications in Android settings to avoid duplicate banners.</string>
+</resources>
