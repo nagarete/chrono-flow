@@ -126,7 +126,9 @@ public final class PanelActivity extends Activity implements NotificationReposit
         super.onSaveInstanceState(state);
     }
     @Override protected void onResume() {
-        super.onResume(); resumed = true; repository.observe(this); render();
+        super.onResume();
+        ChronoListener.refreshActive();
+        resumed = true; repository.observe(this); render();
     }
     @Override protected void onPause() {
         resumed = false;

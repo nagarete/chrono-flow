@@ -7,13 +7,13 @@ The app uses Java and Android platform Views, with no AndroidX, Compose, cross-p
 | `AttentionLedger` | Pure Java versioned attention state; exact-version checks and deterministic chronological order. |
 | `LockPolicy` | Pure Java conservative lock-screen presentation decision. Secret and more restrictive app/channel settings win. |
 | `NotificationRepository` | Live Android notification objects in memory; hashed persisted ledger; reconnect reconciliation; main-thread observers. |
-| `ChronoListener` | System-owned listener lifecycle, real cancellation, ranking changes, and one platform rebind request on disconnect. |
+| `ChronoListener` | System-owned listener lifecycle, real cancellation, ranking changes, foreground reconciliation, and one platform rebind request on disconnect. |
 | `PanelActivity` | Native list, visible-card dwell, pending-intent actions, text/choice input, authentication and redaction. |
 | `ChronoTile` | A user-triggered panel launch from Quick Settings, using the API-appropriate launch method. |
 | `EdgeHandle` | Optional unlocked-only overlay attached to the listener lifetime; no independent persistent service. |
 | `SetupActivity` | One-time access/tile setup and two optional preferences. |
 
-On listener connection, active Android notifications are reconciled with the saved hashed ledger. Notifications Android removed while the listener was stopped are pruned. The listener does not archive payloads. On disconnect, all in-memory notification objects are dropped; hashes remain for reconciliation.
+On listener connection and each panel resume, active Android notifications are reconciled with the saved hashed ledger. The foreground read recovers arrivals, content changes, and removals missed by OEM callbacks. Notifications Android removed while the listener was stopped are pruned. This uses one read per panel resume, with no background polling. Failed foreground reads clear live payloads and display a disconnected state. The listener does not archive payloads. On disconnect, all in-memory notification objects are dropped; hashes remain for reconciliation.
 
 Each meaningful non-ongoing content change receives a new revision. A card's checked revision is committed only if it is still current. This prevents a new message arriving during review from being marked seen by an earlier glance. Arrivals already received while an activity is open remain in NEW until they independently satisfy the visibility check. Attention is not inferred from Android's native shade: third-party listeners cannot reliably determine what the user meaningfully viewed in another surface.
 

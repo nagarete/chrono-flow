@@ -48,7 +48,7 @@ Use JDK 17, Android SDK platform 35, and build-tools 35.0.0. Import the reposito
 
 This runs unit tests, Android lint, and the debug build. The installable APK is `app/build/outputs/apk/debug/app-debug.apk`. The Gradle 8.13 wrapper has a pinned distribution checksum. Gradle generates development signing material in ignored `.tools/`; keep your release key separate. Local test scripts default to repository-local Gradle/Android caches.
 
-With an isolated Android emulator running:
+With an isolated Android emulator running and physical phones disconnected:
 
 ```sh
 ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.chronoflow.PanelIntegrationTest
@@ -58,7 +58,9 @@ Instrumentation tests grant notification access on the **test emulator** using A
 
 The current device suite is validated on API 35. It temporarily sets/removes a PIN on the disposable emulator for its final lock-screen test. Executed checks and screenshots are in [validation](docs/VALIDATION.md).
 
-For an owner-authorized, already-unlocked physical phone with notification access already granted, use the separate `dev.chronoflow.PhysicalDeviceTest` class. It never changes credentials, access grants, or privacy settings; it posts/dismisses only uniquely tagged test notifications and preserves existing attention markers for unchanged notification versions. It tests tile launch, live attention/expansion/open/dismiss behavior, and a synthetic native reply with no external recipient. See [physical-device test commands](docs/DEVICE_TESTING.md#automated-phone-checks). The emulator suite refuses to run on physical hardware.
+For an owner-authorized, already-unlocked physical phone with notification access already granted, use the separate `dev.chronoflow.PhysicalDeviceTest` class. It never changes credentials, access grants, or privacy settings; it posts/dismisses only uniquely tagged test notifications and preserves existing attention markers for unchanged notification versions. It tests tile launch and live attention/expansion/dismissal, plus isolated opening/reply fixtures with no external recipient. See [physical-device test commands](docs/DEVICE_TESTING.md#automated-phone-checks). The emulator suite refuses to run on physical hardware.
+
+All three phone checks pass on the Poco X3 NFC with Android 12/MIUI 14 after the owner enabled autostart. The panel reconciles Android's active list when it resumes to recover missed OEM callbacks, without background polling. Physical lock-screen behavior, endurance/battery measurements, and Xiaomi 17T Pro remain unverified; see [validation](docs/VALIDATION.md).
 
 See [device testing](docs/DEVICE_TESTING.md) for Poco X3 NFC and Xiaomi 17T Pro, and [architecture](docs/ARCHITECTURE.md) for the implementation.
 

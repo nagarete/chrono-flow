@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application>
         <uses-library android:name="android.test.runner" android:required="true" />
         <uses-library android:name="android.test.base" android:required="true" />
+        <receiver android:name="dev.chronoflow.FixturePublisher" android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 </manifest>

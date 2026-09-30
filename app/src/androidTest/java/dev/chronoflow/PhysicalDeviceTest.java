@@ -40,6 +40,7 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
     private final String namespace = "chrono-phone-test-" + System.nanoTime();
     private final Set<String> testKeys = new HashSet<>();
     private final ArrayList<StatusBarNotification> synthetic = new ArrayList<>();
+    private final ArrayList<String> publishedTags = new ArrayList<>();
     private final Map<String, AttentionLedger.Record> original = new HashMap<>();
 
     @Override protected void setUp() throws Exception {
@@ -50,7 +51,35 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
         main(() -> repository = ChronoApp.repository(context));
         assertTrue("Notification access must already be granted by the owner", Preferences.accessGranted(context));
         assertFalse("Owner must unlock the phone before these checks", Preferences.locked(context));
+        // Instrumentation kills the previous app process. MIUI can then refuse its
+        // background listener bind; foreground the granted app and request one bind.
+        activity = getInstrumentation().startActivitySync(new Intent(context, SetupActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        main(() -> {
+            activity.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (!repository.connected()) android.service.notification.NotificationListenerService.requestRebind(
+                    new android.content.ComponentName(context, ChronoListener.class));
+        });
         await(() -> repository.connected());
+        main(activity::finish); getInstrumentation().waitForIdleSync(); activity = null;
+        // Shell fixtures from interrupted runs can be missing from MIUI callbacks.
+        // Parse only this suite's exact namespace and cancel those system keys.
+        for (String line : shell("cmd notification list").split("\n")) {
+            String key = line.trim(); String[] parts = key.split("\\|", -1);
+            if (parts.length == 5 && "com.android.shell".equals(parts[1])
+                    && parts[3].startsWith("chrono-phone-test-")) main(() -> ChronoListener.dismiss(key));
+        }
+        // A revoked grant can interrupt an earlier run before its cleanup. Remove
+        // only this suite's own shell fixtures, never the owner's notifications.
+        main(() -> {
+            for (NotificationEntry entry : repository.snapshot()) {
+                if (isSuiteFixture(entry)) ChronoListener.dismiss(entry.sbn.getKey());
+            }
+        });
+        await(() -> {
+            for (NotificationEntry entry : repository.snapshot()) if (isSuiteFixture(entry)) return false;
+            return true;
+        });
         main(() -> {
             for (AttentionLedger.Record record : ledger().snapshot()) original.put(record.key, record);
         });
@@ -77,6 +106,7 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
                 require(saved.edit().putString("records", saved.getString("records", "[]")).commit(),
                         "Restored attention state must reach disk before test completion");
             });
+            for (String tag : publishedTags) fixtureCommand(tag, "cancel", false);
             await(() -> {
                 for (NotificationEntry entry : repository.snapshot()) if (isTest(entry)) return false;
                 return true;
@@ -86,21 +116,19 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
 
     public void testRealNotificationAttentionExpandAndDismiss() throws Exception {
         String tag = namespace + "-arrival";
-        post("cmd notification post -t Chrono-Poco-test -S bigtext "
-                + tag + " First-test-message");
-        await(() -> findTag(tag) != null);
+        publishedTags.add(tag); fixtureCommand(tag, "post", false);
+        activity = launchPanel();
+        awaitArrival(tag);
         NotificationEntry first = read(() -> findTag(tag)); testKeys.add(first.attention.key);
         assertTrue(first.attention.isNew());
-        activity = launchPanel();
         await(() -> findText(activity.getWindow().getDecorView(), "Chrono-Poco-test") != null);
         Thread.sleep(1800);
         finishPanel(); getInstrumentation().waitForIdleSync();
         assertFalse("Visible test notification should become EARLIER", read(() -> findTag(tag)).attention.isNew());
 
-        post("cmd notification post -t Chrono-Poco-test -S bigtext "
-                + tag + " Updated-test-message");
-        await(() -> findTag(tag) != null && findTag(tag).attention.isNew());
+        fixtureCommand(tag, "post", true);
         activity = launchPanel();
+        await(() -> findTag(tag) != null && findTag(tag).attention.isNew());
         await(() -> findText(activity.getWindow().getDecorView(), "Chrono-Poco-test") != null);
         main(() -> {
             TextView title = findText(activity.getWindow().getDecorView(), "Chrono-Poco-test");
@@ -151,8 +179,8 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
                     namespace + "-reply", Process.myUid(), Process.myPid(), 0, notification,
                     UserHandle.getUserHandleForUid(Process.myUid()), System.currentTimeMillis());
             synthetic.add(fixture); testKeys.add(NotificationRepository.hash(fixture.getKey()));
-            main(() -> repository.post(fixture, null));
             activity = launchPanel();
+            main(() -> repository.post(fixture, null));
             await(() -> findText(activity.getWindow().getDecorView(), "Chrono-Poco-reply-test") != null);
             main(() -> {
                 TextView title = findText(activity.getWindow().getDecorView(), "Chrono-Poco-reply-test");
@@ -203,17 +231,23 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
     }
 
     private boolean isTest(NotificationEntry entry) {
-        return "com.android.shell".equals(entry.sbn.getPackageName()) && entry.sbn.getTag() != null
-                && entry.sbn.getTag().startsWith(namespace);
+        return isSuiteFixture(entry) && entry.sbn.getTag().startsWith(namespace);
+    }
+    private boolean isSuiteFixture(NotificationEntry entry) {
+        return ("com.android.shell".equals(entry.sbn.getPackageName())
+                || (context.getPackageName() + ".test").equals(entry.sbn.getPackageName())) && entry.sbn.getTag() != null
+                && entry.sbn.getTag().startsWith("chrono-phone-test-");
     }
     private NotificationEntry findTag(String tag) {
-        for (NotificationEntry entry : repository.snapshot()) if ("com.android.shell".equals(entry.sbn.getPackageName())
+        for (NotificationEntry entry : repository.snapshot()) if (isSuiteFixture(entry)
                 && tag.equals(entry.sbn.getTag())) return entry;
         return null;
     }
     private AttentionLedger ledger() { return field(repository, "ledger"); }
     private Activity launchPanel() {
-        return getInstrumentation().startActivitySync(new Intent(context, PanelActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        Activity panel = getInstrumentation().startActivitySync(new Intent(context, PanelActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        main(() -> panel.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
+        return panel;
     }
     private void keepOnlyTestObservations() {
         if (activity instanceof PanelActivity) {
@@ -233,13 +267,45 @@ public final class PhysicalDeviceTest extends InstrumentationTestCase {
         while (System.currentTimeMillis() < deadline) { if (read(condition)) return; Thread.sleep(100); }
         fail("Physical-device condition did not complete within 12 seconds");
     }
-    private void post(String command) throws Exception {
-        // MIUI's shell-created PendingIntent is rejected for package-identity mismatch.
-        // Use plain real posts here; the separate local fixture exercises content intents/actions.
-        require(shell(command).contains("posting:"), "Android did not enqueue the test notification");
+    private void awaitArrival(String tag) throws Exception {
+        long deadline = System.currentTimeMillis() + 12000;
+        while (System.currentTimeMillis() < deadline) {
+            if (read(() -> findTag(tag) != null)) return;
+            Thread.sleep(100);
+        }
+        String details = read(() -> {
+            try {
+                Field current = ChronoListener.class.getDeclaredField("current"); current.setAccessible(true);
+                ChronoListener listener = (ChronoListener) current.get(null);
+                if (listener == null) return "listener missing";
+                StatusBarNotification[] active = listener.getActiveNotifications();
+                if (active != null) for (StatusBarNotification sbn : active) if (tag.equals(sbn.getTag())) {
+                    Context owner = field(repository, "context");
+                    Map<String, StatusBarNotification> live = field(repository, "active");
+                    String key = NotificationRepository.hash(sbn.getKey());
+                    return "platform fixture present, package=" + sbn.getPackageName()
+                            + ", flags=" + sbn.getNotification().flags + ", repository owner=" + owner.getPackageName()
+                            + ", active=" + live.containsKey(key) + ", ledger=" + (ledger().get(key) != null)
+                            + ", listener shares repository=" + (repository == ChronoApp.repository(listener));
+                }
+                return "platform fixture missing";
+            } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+        });
+        fail("Fixture arrival timed out: connected=" + read(repository::connected)
+                + ", " + details);
+    }
+    private void fixtureCommand(String tag, String operation, boolean updated) throws Exception {
+        // The shell-only receiver runs as the separately installed helper, not the
+        // target app (which intentionally excludes its own notifications).
+        String result = shell("am broadcast --receiver-foreground -n " + context.getPackageName()
+                + ".test/dev.chronoflow.FixturePublisher --es tag " + tag
+                + " --es operation " + operation + " --ez updated " + updated);
+        require(result.contains("Broadcast completed"), "Android must deliver the isolated fixture command");
     }
     private String shell(String command) throws Exception {
-        try (ParcelFileDescriptor descriptor = getInstrumentation().getUiAutomation().executeShellCommand(command);
+        // Keep the owner's accessibility services running throughout phone checks.
+        try (ParcelFileDescriptor descriptor = getInstrumentation().getUiAutomation(
+                     android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand(command);
              FileInputStream stream = new FileInputStream(descriptor.getFileDescriptor())) {
             java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
             byte[] buffer = new byte[4096]; int count;

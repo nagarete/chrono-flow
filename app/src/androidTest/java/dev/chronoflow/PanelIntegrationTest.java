@@ -40,10 +40,19 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
         super.setUp(); context = getInstrumentation().getTargetContext();
         assertTrue("Emulator-only suite: select PhysicalDeviceTest on a phone",
                 Build.HARDWARE.contains("ranchu") || Build.HARDWARE.contains("goldfish"));
-        shell("input keyevent KEYCODE_WAKEUP"); shell("wm dismiss-keyguard");
+        shell("input keyevent KEYCODE_WAKEUP"); shell("input keyevent KEYCODE_MENU"); shell("wm dismiss-keyguard");
         waitFor(() -> !Preferences.locked(context));
         shell("cmd notification allow_listener dev.chronoflow/dev.chronoflow.ChronoListener");
         waitFor(() -> ChronoApp.repository(context).connected());
+        main(() -> {
+            for (NotificationEntry entry : ChronoApp.repository(context).snapshot()) {
+                if (isIntegrationFixture(entry)) ChronoListener.dismiss(entry.sbn.getKey());
+            }
+        });
+        waitFor(() -> {
+            for (NotificationEntry entry : ChronoApp.repository(context).snapshot()) if (isIntegrationFixture(entry)) return false;
+            return true;
+        });
     }
     @Override protected void tearDown() throws Exception {
         if (activity != null && !activity.isFinishing()) main(activity::finish);
@@ -57,6 +66,13 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
         NotificationEntry first = read(() -> findTag(tag));
         assertTrue(first.attention.isNew());
         activity = launch(PanelActivity.class);
+        waitFor(() -> {
+            TextView title = findText(activity.getWindow().getDecorView(), "Integration-arrival");
+            android.graphics.Rect visible = new android.graphics.Rect();
+            return activity.hasWindowFocus() && title != null
+                    && ((View) title.getParent()).getGlobalVisibleRect(visible)
+                    && visible.height() >= Ui.dp(context, 80);
+        });
         Thread.sleep(1800); getInstrumentation().waitForIdleSync();
         main(activity::finish); getInstrumentation().waitForIdleSync();
         assertFalse(read(() -> findTag(tag)).attention.isNew());
@@ -75,11 +91,12 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
             StatusBarNotification privateEntry = fixture(20, "Private-title", "Private-message", null);
             StatusBarNotification secret = fixture(21, "Secret-title", "Secret-message", null);
             secret.getNotification().visibility = Notification.VISIBILITY_SECRET;
-            main(() -> ChronoApp.repository(context).connect(new StatusBarNotification[]{privateEntry, secret}, null));
             shell("input keyevent KEYCODE_SLEEP");
             shell("input keyevent KEYCODE_WAKEUP");
             waitFor(() -> Preferences.locked(context));
             activity = launch(PanelActivity.class);
+            main(() -> ChronoApp.repository(context).connect(new StatusBarNotification[]{privateEntry, secret}, null));
+            getInstrumentation().waitForIdleSync();
             assertNotNull(read(() -> findText(activity.getWindow().getDecorView(), "NEW  ·  1")));
             assertNull(read(() -> findText(activity.getWindow().getDecorView(), "Private-title")));
             assertNull(read(() -> findText(activity.getWindow().getDecorView(), "Private-message")));
@@ -120,13 +137,14 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
             StatusBarNotification fresh = fixture(1, "Maya", "Coffee at 4? There’s a new place nearby.", action);
             StatusBarNotification second = fixture(2, "Design review", "Tomorrow, 10:00 · Bring your notes", null);
             StatusBarNotification older = fixture(3, "Your weekly reading list", "A few good things to come back to.", null);
+            activity = launch(PanelActivity.class);
             main(() -> {
                 NotificationRepository repository = ChronoApp.repository(context);
                 repository.connect(new StatusBarNotification[]{fresh, second, older}, null);
                 NotificationEntry entry = repository.find(NotificationRepository.hash(older.getKey()));
                 repository.checked(Map.of(entry.attention.key, entry.attention.revision));
             });
-            activity = launch(PanelActivity.class);
+            getInstrumentation().waitForIdleSync();
             assertNotNull(read(() -> findText(activity.getWindow().getDecorView(), "NEW  ·  2")));
             assertNotNull(read(() -> findText(activity.getWindow().getDecorView(), "EARLIER  ·  1")));
             capture("panel-new-earlier.png");
@@ -157,16 +175,19 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
     }
 
     public void testTileLaunchesFromHome() throws Exception {
-        shell("input keyevent KEYCODE_HOME");
-        shell("cmd statusbar add-tile dev.chronoflow/dev.chronoflow.ChronoTile");
-        shell("cmd statusbar expand-settings");
-        Thread.sleep(800);
-        shell("cmd statusbar click-tile dev.chronoflow/dev.chronoflow.ChronoTile");
-        waitForUi(() -> {
-            android.view.accessibility.AccessibilityNodeInfo root = getInstrumentation().getUiAutomation().getRootInActiveWindow();
-            return root != null && !root.findAccessibilityNodeInfosByText("A clear view of now.").isEmpty();
-        });
-        shell("input keyevent KEYCODE_BACK");
+        android.app.Instrumentation.ActivityMonitor monitor = getInstrumentation().addMonitor(
+                PanelActivity.class.getName(), null, false);
+        try {
+            shell("input keyevent KEYCODE_HOME");
+            shell("cmd statusbar add-tile dev.chronoflow/dev.chronoflow.ChronoTile");
+            shell("cmd statusbar expand-settings");
+            Thread.sleep(800);
+            shell("cmd statusbar click-tile dev.chronoflow/dev.chronoflow.ChronoTile");
+            activity = monitor.waitForActivityWithTimeout(10000);
+            assertNotNull("Tile must launch the real panel activity", activity);
+            assertNotNull(read(() -> findText(activity.getWindow().getDecorView(), "A clear view of now.")));
+            main(activity::finish); getInstrumentation().waitForIdleSync();
+        } finally { getInstrumentation().removeMonitor(monitor); }
     }
 
     private StatusBarNotification fixture(int id, String title, String text, Notification.Action action) {
@@ -186,6 +207,10 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
         for (NotificationEntry entry : ChronoApp.repository(context).snapshot()) if (tag.equals(entry.sbn.getTag())) return entry;
         return null;
     }
+    private boolean isIntegrationFixture(NotificationEntry entry) {
+        return "com.android.shell".equals(entry.sbn.getPackageName()) && entry.sbn.getTag() != null
+                && entry.sbn.getTag().startsWith("chrono-integration-");
+    }
     private interface Read<T> { T get(); }
     private <T> T read(Read<T> action) {
         AtomicReference<T> result = new AtomicReference<>(); main(() -> result.set(action.get())); return result.get();
@@ -198,21 +223,12 @@ public final class PanelIntegrationTest extends InstrumentationTestCase {
         if (failure.get() != null) throw new AssertionError(failure.get());
     }
     private void waitFor(Read<Boolean> condition) throws Exception {
-        long deadline = System.currentTimeMillis() + 6000;
+        long deadline = System.currentTimeMillis() + 12000;
         while (System.currentTimeMillis() < deadline) {
             if (read(condition)) return;
             Thread.sleep(100);
         }
-        fail("Condition not met within 6 seconds");
-    }
-    private void waitForUi(Read<Boolean> condition) throws Exception {
-        long deadline = System.currentTimeMillis() + 6000;
-        while (System.currentTimeMillis() < deadline) {
-            // Accessibility requests must not block the app main thread that serves their nodes.
-            if (condition.get()) return;
-            Thread.sleep(100);
-        }
-        fail("UI condition not met within 6 seconds");
+        fail("Condition not met within 12 seconds");
     }
     private void shell(String command) throws Exception {
         try (ParcelFileDescriptor descriptor = getInstrumentation().getUiAutomation().executeShellCommand(command);

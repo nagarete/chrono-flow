@@ -1,0 +1,8 @@
+
+dev.chronoflow.PhysicalDeviceTest:...
+Test results for InstrumentationTestRunner=...
+Time: 15.816
+
+OK (3 tests)
+
+

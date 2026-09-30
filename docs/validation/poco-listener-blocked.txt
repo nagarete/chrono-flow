@@ -1,0 +1,21 @@
+Historical physical validation blocker — 2026-09-30
+Poco X3 NFC (M2007J20CG / surya), Android 12 / API 31
+MIUI V14.0.2.0.SJGIDXM
+
+Owner unlocked the phone normally. Existing notification-access grant remained enabled.
+PhysicalDeviceTest initialization timed out waiting for repository.connected().
+Foreground setup plus NotificationListenerService.requestRebind did not restore binding.
+
+Relevant Android NotificationListeners log, restricted to chrono-flow:
+09-30 09:50:19.886 W/NotificationListeners: AutStart Unable to bind notification listener service: Intent { act=android.service.notification.NotificationListenerService cmp=dev.chronoflow/.ChronoListener (has extras) }
+09-30 10:00:53.180 W/NotificationListeners: AutStart Unable to bind notification listener service: Intent { act=android.service.notification.NotificationListenerService cmp=dev.chronoflow/.ChronoListener (has extras) }
+09-30 10:00:53.184 W/NotificationListeners: AutStart Unable to bind notification listener service: Intent { act=android.service.notification.NotificationListenerService cmp=dev.chronoflow/.ChronoListener (has extras) }
+
+The stalled runner was deliberately stopped. Its termination message, "Process crashed",
+reflects that cancellation; no application crash is established by it.
+
+Resolution: the owner enabled MIUI autostart and restored notification access.
+The final selected phone suite subsequently passed 3 tests; see poco-tests.txt and VALIDATION.md.
+The panel also gained foreground reconciliation to recover intermittent missed OEM callbacks.
+No security, notification-access, autostart, or device-timeout settings were changed.
+No personal notification content is included in this record.

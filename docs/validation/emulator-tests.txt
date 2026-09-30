@@ -1,7 +1,7 @@
 
 dev.chronoflow.PanelIntegrationTest:.....
 Test results for InstrumentationTestRunner=.....
-Time: 10.78
+Time: 11.75
 
 OK (5 tests)
 

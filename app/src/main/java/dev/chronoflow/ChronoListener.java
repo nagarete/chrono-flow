@@ -51,4 +51,15 @@ public final class ChronoListener extends NotificationListenerService {
         }
     }
     static void refreshEdge() { if (current != null) current.edge.refresh(); }
+    static void refreshActive() {
+        ChronoListener listener = current;
+        if (listener == null) return;
+        NotificationRepository repository = ChronoApp.repository(listener);
+        try {
+            // A foreground check reconciles missed OEM callbacks without idle polling.
+            StatusBarNotification[] active = listener.getActiveNotifications();
+            if (active == null) repository.disconnect();
+            else repository.connect(active, listener.getCurrentRanking());
+        } catch (SecurityException | IllegalStateException e) { repository.disconnect(); }
+    }
 }
