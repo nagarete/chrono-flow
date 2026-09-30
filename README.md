@@ -4,20 +4,26 @@ A calmer Android notification panel. Fresh notifications come forward in **NEW**
 
 This repository contains a native Android app, not a web mockup. Android 10+ (API 29); compiled and targeted against API 35. No third-party runtime libraries, network permission, backend, accounts, analytics, ads, or Play Store integration. Distribution is GitHub APK releases only.
 
-## Daily use
+## Install and enable, step by step
 
-1. Install the APK and open chrono-flow once for setup.
-2. Grant notification access. On Android 13+, a sideloaded APK may need **App info → ⋮ → Allow restricted settings** before Android permits this grant. Labels and availability vary by firmware.
-3. Add the **chrono-flow Quick Settings tile**. Open it from the system shade whenever you need your notifications.
-4. Optionally enable the small **edge handle** and grant display-over-other-apps access. Tap it or swipe inward from the right edge while unlocked.
-5. For a stock-style entry point, enable **chrono-flow swipe and banners** in Android Accessibility, then turn on **Top-left swipe** in setup. Swipe down from the left half of the top edge while unlocked. The right half still opens Android's shade/Quick Settings. Accessibility is optional and does not read screen content.
-6. Optionally enable **Popup banners** using the same Accessibility grant. New or meaningfully changed notifications appear for six seconds while unlocked; **Open panel** lets you review them, and **Hide** only closes the popup. To avoid duplicate stock banners, use **Open notification settings** in setup and turn off **Floating notifications / Pop on screen** for the desired apps, keeping notifications enabled. Stock suppression requires this Android setting; chrono-flow cannot change other apps' channels through Accessibility.
+Only step 4 is required. Steps 6–9 add optional entry points and are safe to skip; you can return to setup at any time by opening the app from your launcher.
 
-The launcher opens setup. Normal use opens the panel from the tile, handle, top-left swipe or popup and does not require visiting setup again.
+1. **Download the APK.** Open the [latest release](https://github.com/nagarete/chrono-flow/releases/latest) and download `chrono-flow-v0.1.0.apk`. Optionally download `SHA256SUMS` too and check it with `sha256sum -c SHA256SUMS`.
+2. **Install it.** Open the downloaded file and confirm the install. Android may ask you to allow installing unknown apps for your browser or file manager; if so, enable that for the app you are installing from, then retry. The app requests no network, account, or storage permission.
+3. **Open chrono-flow once.** The launcher opens the setup screen. Every later entry point (tile, handle, swipe, popup) goes straight to the panel, so setup is normally visited only to change options.
+4. **Step 01 — connect your notifications.** Tap **Allow notification access**. Find **chrono-flow notification access** in Android's notification-access list and turn it on, then come back. The card reads *Connected* once Android binds the listener, and nothing is shown until this grant exists. On Android 13+ a sideloaded app may first need **App info → ⋮ → Allow restricted settings** before Android permits the grant.
+5. **Step 02 — make it one tap away.** Tap **Add Quick Settings tile** and confirm (or pull down Quick Settings twice → **Edit** (pencil) → drag **chrono-flow** into your active tiles). Tap the tile any time to open the panel.
+6. **Optional — edge handle.** Turn on **Edge handle** at the right edge and allow **Display over other apps** when Android asks. Then tap the small handle or swipe inward from the right edge while unlocked.
+7. **Optional — swipe and banners (Accessibility).** Tap **Open Accessibility settings**, select **chrono-flow swipe and banners**, and turn it on. It adds touch controls only: it cannot read screen content, perform gestures, or take screenshots, and notification text still comes from the separate notification-access grant above. Back in setup, turn on **Top-left swipe** to open the panel by swiping down from the left half of the top edge while unlocked — the right half still opens Android's shade and Quick Settings.
+8. **Optional — Popup banners.** With the same Accessibility grant, turn on **Popup banners** to show new or meaningfully changed notifications for six seconds while unlocked; **Open panel** reviews them and **Hide** only closes the popup.
+9. **Optional — avoid double popups.** If you enabled banners, tap **Open notification settings** and turn off **Floating notifications** (or **Pop on screen**) for the apps you want chrono-flow to handle, keeping their notifications enabled. Android owns this setting; Accessibility cannot change other apps' channels.
+10. **Try it.** Tap **Open notification panel →** at the bottom of setup.
+
+### Day to day
+
+Normal use opens the panel directly from the tile, handle, top-left swipe, or popup — no need to revisit setup. Tap a card to open its original notification, expand it with the chevron for detail and supported actions, or swipe either way / use **Dismiss** to dismiss a clearable notification. Ongoing notifications stay under Android's control. Text replies go to the originating app's `RemoteInput` action; data-only actions need the originating app. Chrono-flow does not emulate arbitrary custom `RemoteViews`, media seeking, or missing actions.
 
 Popup banners do not mark notifications checked. Identical reposts do not restart a popup. Banners do not replay the existing notification set on connection or unlock, do not sound/vibrate, and respect Do Not Disturb and Android's peek restrictions. Low-importance notifications, ongoing notifications, calls, alarms and full-screen intents retain their Android behavior. Banners disappear on removal, screen-off/locking, access loss or feature disable. Neither optional Accessibility control appears while the panel is open or the device is locked.
-
-Tap a card to open its original notification. Expand it with the chevron for detail and supported actions; swipe either way or use **Dismiss** to dismiss a clearable notification. Ongoing notifications stay under Android's control. Text replies go to the originating app's `RemoteInput` action. Data-only actions need the originating app. Chrono-flow does not emulate arbitrary custom `RemoteViews`, media seeking, or missing actions.
 
 ## The attention model
 
@@ -70,9 +76,7 @@ See [device testing](docs/DEVICE_TESTING.md) for Poco X3 NFC and Xiaomi 17T Pro,
 
 ## GitHub distribution
 
-Push this repository to your chosen GitHub repo. Pull requests and branch pushes run the checks and attach a development APK artifact. For a stable signed release, configure the secrets in [release setup](docs/RELEASING.md), update `versionName`/`versionCode`, and push its matching `v*` tag. The release workflow refuses to publish without signing secrets and attaches an APK plus checksums to GitHub Releases. It does not publish to any other service.
-
-No GitHub repository, public release, or release signing identity has been created by this implementation.
+Release APKs are published on [GitHub Releases](https://github.com/nagarete/chrono-flow/releases) only; the latest is `v0.1.0`, marked as a pre-release because the app is still beta. Pull requests and branch pushes run the checks and attach a development APK artifact. For a new signed release, configure the secrets in [release setup](docs/RELEASING.md), bump `versionName`/`versionCode`, and push its matching `v*` tag. The release workflow refuses to publish without signing secrets and attaches an APK plus checksums. It does not publish to any other service.
 
 ## Platform references
 

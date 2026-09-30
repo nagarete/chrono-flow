@@ -15,4 +15,4 @@ Update `versionCode`, `versionName`, and `docs/RELEASE_NOTES.md`. Push a tag exa
 
 For local release signing set `CHRONO_KEYSTORE` to an absolute keystore path and the three password/alias variables, then run `./gradlew :app:assembleRelease`. Without a keystore, release builds are intentionally unsigned and must not be presented as installable releases. Debug builds are installable but cannot be upgraded directly to a differently signed release; uninstalling a debug build resets its local attention metadata.
 
-The initial repository has no configured GitHub remote or release signing identity. Publishing and key provisioning are owner setup steps, not actions already completed.
+The repository `nagarete/chrono-flow` is configured with these secrets and has published `v0.1.0` as a pre-release. The release signing key and its passwords are held outside the repository (locally in ignored `.tools/`); back them up, because every future APK update must use the same certificate. Any later owner setup beyond rotating that key or secret is not already completed.
